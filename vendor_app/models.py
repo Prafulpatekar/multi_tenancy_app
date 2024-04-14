@@ -1,17 +1,38 @@
 from django.db import models
 from django_tenants.models import TenantMixin,DomainMixin
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.db import models
 from django.utils import timezone
+import uuid
+import os
+
 
 class Client(TenantMixin):
-    name = models.CharField(max_length=100,null=False,blank=False)
+    vendor_name = models.CharField(max_length=100, unique=True, null=False, blank=False)
+    vendor_uuid = models.UUIDField(default=uuid.uuid4,auto_created=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+    description = models.TextField(blank=True)
+    domain_url = models.URLField(blank=True, null=True, default=os.getenv("DOMAIN"))
     schema_name = models.CharField(max_length=100,null=False,blank=False)
-    created_date = models.DateField(auto_now_add=True)
-    created_datetime = models.DateTimeField(auto_now_add=True)
-    def __str__(self):
-        return self.name
+    is_active = models.BooleanField(default=True, blank=True)
+    created_on = models.DateField(auto_now_add=True)
 
+    # default true, schema will be automatically created and
+    # synced when it is saved
+    auto_create_schema = True
+
+    """
+    USE THIS WITH CAUTION!
+    Set this flag to true on a parent class if you want the schema to be
+    automatically deleted if the tenant row gets deleted.
+    """
+    auto_drop_schema = True
+
+
+    class Meta:
+        ordering = ('-updated_at',)
+
+    def __str__(self):
+        return f"{self.vendor_name}"
 
 class Domain(DomainMixin):
     pass
@@ -32,9 +53,6 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
 
-        if extra_fields.get('role') !=  BaseCustomUser.Role.ADMIN:
-            raise ValueError(f'Superuser must have role "{BaseCustomUser.Role.ADMIN}".')
-
         return self.create_user(email, password=password, **extra_fields)
 
 class BaseCustomUser(AbstractBaseUser, PermissionsMixin):
@@ -42,6 +60,7 @@ class BaseCustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    is_superuser = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
     client = models.ForeignKey(Client, on_delete=models.SET_NULL, related_name='roles',null=True)
 
@@ -62,75 +81,3 @@ class BaseCustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
-
-
-class AdminManager(BaseUserManager):
-    def get_queryset(self, *args, **kwargs):
-        results = super().get_queryset(*args, **kwargs)
-        return results.filter(role=BaseCustomUser.Role.ADMIN)
-
-class Admin(BaseCustomUser):
-    base_role = BaseCustomUser.Role.ADMIN
-    objects = AdminManager()
-
-    def create_user(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('role', BaseCustomUser.Role.ADMIN)
-        return self.__class__.objects.create_user(email, password=password, **extra_fields)
-    
-    class Meta:
-        verbose_name = 'Admin'
-        verbose_name_plural = 'Admins'
-
-class SupervisorManager(BaseUserManager):
-    def get_queryset(self, *args, **kwargs):
-        results = super().get_queryset(*args, **kwargs)
-        return results.filter(role=BaseCustomUser.Role.SUPERVISOR)
-
-class Supervisor(BaseCustomUser):
-    base_role = BaseCustomUser.Role.SUPERVISOR
-    objects = SupervisorManager()
-
-    def create_user(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('role', BaseCustomUser.Role.SUPERVISOR)
-        return self.__class__.objects.create_user(email, password=password, **extra_fields)
-    
-    class Meta:
-        verbose_name = 'Supervisor'
-        verbose_name_plural = 'Supervisors'
-
-class SalesPersonManager(BaseUserManager):
-    def get_queryset(self, *args, **kwargs):
-        results = super().get_queryset(*args, **kwargs)
-        return results.filter(role=BaseCustomUser.Role.SALES_PERSION)
-
-
-class SalesPerson(BaseCustomUser):
-    base_role = BaseCustomUser.Role.SALES_PERSION
-    objects = SalesPersonManager()
-
-    def create_user(self, email, password=None, client=None, **extra_fields):
-        extra_fields.setdefault('role', BaseCustomUser.Role.SALES_PERSION)
-        if client is not None:
-            extra_fields['client'] = client
-        return self.__class__.objects.create_user(email, password=password, **extra_fields)
-
-    class Meta:
-        verbose_name = 'Sales Person'
-        verbose_name_plural = 'Sales People'
-
-class CustomerManager(BaseUserManager):
-    def get_queryset(self, *args, **kwargs):
-        results = super().get_queryset(*args, **kwargs)
-        return results.filter(role=BaseCustomUser.Role.SALES_PERSION)
-
-
-class Customer(BaseCustomUser):
-    base_role = BaseCustomUser.Role.CUSTOMER
-    objects = CustomerManager()
-
-    def create_user(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('role', BaseCustomUser.Role.CUSTOMER)
-        return self.__class__.objects.create_user(email, password=password, **extra_fields)
-    
-    class Meta:
-        proxy = True

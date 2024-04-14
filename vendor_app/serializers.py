@@ -1,4 +1,4 @@
-from .models import Client,BaseCustomUser
+from .models import Client
 from rest_framework import serializers
 
 
@@ -6,20 +6,24 @@ from rest_framework import serializers
 class VendorCreateSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Client
-        fields = ['name']
+        fields = ['vendor_name','description']
 
 
 class VendorRetrieveSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Client
-        fields = ['id','name','schema_name','created_date','created_datetime']
+        fields = ['id','vendor_name','schema_name','vendor_uuid','created_on','domain_url','description']
     
-class RolesRetrieveSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = BaseCustomUser
-        fields = ['id','email','role']
+# class RolesRetrieveSerializer(serializers.HyperlinkedModelSerializer):
+#     class Meta:
+#         model = BaseCustomUser
+#         fields = ['id','email','role','name']
 
-class RolesCreateSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = BaseCustomUser
-        fields = ['name','email','role','password']
+# class RolesCreateSerializer(serializers.HyperlinkedModelSerializer):
+#     class Meta:
+#         model = BaseCustomUser
+#         fields = ['name','email','role','password']
+# class RolesUpdateSerializer(serializers.HyperlinkedModelSerializer):
+#     class Meta:
+#         model = BaseCustomUser
+#         fields = ['name']

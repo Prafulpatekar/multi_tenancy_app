@@ -33,18 +33,27 @@ ALLOWED_HOSTS = []
 # Public Apps
 SHARED_APPS = [
     'django_tenants',
-    'rest_framework',
+    'vendor_app.apps.VendorAppConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'vendor_app.apps.VendorAppConfig',
+    'rest_framework',
 ]
 
 # Specific to client vendor
-TENANT_APPS = ['client_app.apps.ClientAppConfig']
+TENANT_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'client_app.apps.ClientAppConfig',
+
+]
 
 INSTALLED_APPS = SHARED_APPS + [app for app in TENANT_APPS if app not in SHARED_APPS]
 
