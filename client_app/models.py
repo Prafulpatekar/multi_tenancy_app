@@ -92,8 +92,8 @@ class Product(models.Model):
     store = models.ForeignKey(Store, on_delete=models.SET_NULL,null=True)
 
 class Sale(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.SET_NULL,null=True)
-    salesperson = models.ForeignKey(SalesPerson, on_delete=models.SET_NULL,null=True)
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL,null=True,related_name='product')
+    salesperson = models.ForeignKey(SalesPerson, on_delete=models.SET_NULL,null=True,related_name='salesperson')
     units_sold = models.PositiveIntegerField()
     is_deleted = models.BooleanField(default=False)
     sale_date = models.DateField(auto_now_add=True)
